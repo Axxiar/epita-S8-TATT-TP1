@@ -45,5 +45,12 @@ Vagrant.configure("2") do |config|
       v.graphics_type = "spice"   # snappy desktop (Xfce already inside the box)
       v.video_type    = "qxl"
     end
+    # Make /vagrant visible from the Xfce desktop and file manager. Idempotent.
+    k.vm.provision "shell", privileged: false, name: "desktop-link", inline: <<~'SHELL'
+      mkdir -p "$HOME/Desktop" "$HOME/.config/gtk-3.0"
+      ln -sfn /vagrant "$HOME/Desktop/lab"
+      grep -q '^file:///vagrant' "$HOME/.config/gtk-3.0/bookmarks" 2>/dev/null \
+        || echo 'file:///vagrant lab' >> "$HOME/.config/gtk-3.0/bookmarks"
+    SHELL
   end
 end
