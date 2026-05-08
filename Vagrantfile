@@ -32,6 +32,10 @@ Vagrant.configure("2") do |config|
   # ── Attacker: Kali rolling ──────────────────────────────────────────
   config.vm.define "kali" do |k|
     k.vm.box = "kalilinux/rolling"
+    # Live bidirectional mount of the project dir at /vagrant via QEMU 9p.
+    # Files written on either side appear immediately on the other. 9p is built
+    # into qemu on every distro, and the 9p kernel module ships in mainline.
+    k.vm.synced_folder ".", "/vagrant", type: "9p", accessmode: "squash"
     k.vm.network :private_network,
       ip: "192.168.242.101",
       libvirt__forward_mode: "none"
