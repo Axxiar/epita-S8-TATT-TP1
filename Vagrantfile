@@ -46,11 +46,11 @@ Vagrant.configure("2") do |config|
       v.video_type    = "qxl"
     end
     # Make /vagrant visible from the Xfce desktop and file manager. Idempotent.
-    k.vm.provision "shell", privileged: false, name: "desktop-link", inline: <<~'SHELL'
+    k.vm.provision "shell", privileged: false, name: "shared-folder-link", inline: <<~'SHELL'
       mkdir -p "$HOME/Desktop" "$HOME/.config/gtk-3.0"
-      ln -sfn /vagrant "$HOME/Desktop/lab"
-      grep -q '^file:///vagrant' "$HOME/.config/gtk-3.0/bookmarks" 2>/dev/null \
-        || echo 'file:///vagrant lab' >> "$HOME/.config/gtk-3.0/bookmarks"
+      ln -sfn /vagrant "$HOME/Desktop/Shared"
+      grep -q '^file:///vagrant Shared$' "$HOME/.config/gtk-3.0/bookmarks" 2>/dev/null \
+        || echo 'file:///vagrant Shared' >> "$HOME/.config/gtk-3.0/bookmarks"
     SHELL
   end
 end
