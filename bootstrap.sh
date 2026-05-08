@@ -84,6 +84,9 @@ FAIL=0
 step "Pentest lab — host check"
 printf '  %schecks vagrant + libvirt + KVM + group + NAT + firewall + virt-manager%s\n' "$D" "$N"
 printf '  %sauto-fixes firewall rules; other items show the fix command%s\n'             "$D" "$N"
+printf '  %ssudo may be requested — only to read/edit your firewall:%s\n'                "$D" "$N"
+printf '    %s· allow libvirt bridges (virbr+) for VM DHCP traffic%s\n'                  "$D" "$N"
+printf '    %s· stack-aware (firewalld / ufw / iptables) — idempotent, only when needed%s\n' "$D" "$N"
 
 # 1. vagrant
 if have vagrant; then

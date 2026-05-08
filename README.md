@@ -11,10 +11,20 @@ cd epita-S8-TATT-TP1
 vagrant up
 ```
 
-## Use
+## Use the lab — GUI (recommended)
 
 ```bash
-vagrant ssh kali                  # vagrant / vagrant
+virt-manager &
+```
+
+Double-click **`tools_kali`** in the list → the Xfce desktop opens (login `kali` / `kali`).
+From there, launch terminal/Burp/Wireshark/BloodHound/etc. like a normal Kali install.
+Target Metasploitable 2 lives at `192.168.242.102`.
+
+## Use the lab — CLI
+
+```bash
+vagrant ssh kali                  # login: vagrant / vagrant
 nmap -sV 192.168.242.102          # target = Metasploitable 2
 ```
 
@@ -27,5 +37,5 @@ vagrant destroy -f
 
 ## Logins
 
-- Kali: `vagrant` / `vagrant` (desktop: `kali` / `kali`)
+- Kali: `vagrant` / `vagrant` (CLI) — `kali` / `kali` (GUI)
 - Metasploitable 2: `msfadmin` / `msfadmin`
