@@ -9,6 +9,13 @@
 # Requires: vagrant + vagrant-libvirt plugin + libvirtd running.
 # Run ./bootstrap.sh first to verify host prereqs and firewall.
 
+# Project-scoped libvirt storage pool. Using a unique name + path prevents
+# vagrant-libvirt's default behaviour from clashing with whatever pool the
+# host already has at /var/lib/libvirt/images (default, vm, images, …).
+# bootstrap.sh creates and starts this pool before `vagrant up`.
+# Keep these values in sync with bootstrap.sh.
+POOL_NAME = "tatt-pentest-lab"
+
 Vagrant.configure("2") do |config|
   # Force a known TERM so vim/colors/clear work over `vagrant ssh`.
   config.ssh.extra_args = ["-o", "SetEnv=TERM=xterm"]
@@ -23,9 +30,10 @@ Vagrant.configure("2") do |config|
       ip: "192.168.242.102",
       libvirt__forward_mode: "none"
     ms2.vm.provider :libvirt do |v|
-      v.memory         = 1024
-      v.cpus           = 1
-      v.nic_model_type = "rtl8139"   # MS2's 2.6.24 kernel lacks reliable virtio
+      v.memory            = 1024
+      v.cpus              = 1
+      v.nic_model_type    = "rtl8139"   # MS2's 2.6.24 kernel lacks reliable virtio
+      v.storage_pool_name = POOL_NAME
     end
   end
 
@@ -40,10 +48,11 @@ Vagrant.configure("2") do |config|
       ip: "192.168.242.101",
       libvirt__forward_mode: "none"
     k.vm.provider :libvirt do |v|
-      v.memory        = 4096
-      v.cpus          = 2
-      v.graphics_type = "spice"   # snappy desktop (Xfce already inside the box)
-      v.video_type    = "qxl"
+      v.memory            = 4096
+      v.cpus              = 2
+      v.graphics_type     = "spice"   # snappy desktop (Xfce already inside the box)
+      v.video_type        = "qxl"
+      v.storage_pool_name = POOL_NAME
     end
     # Make /vagrant visible from the Xfce desktop and file manager. Idempotent.
     k.vm.provision "shell", privileged: false, name: "shared-folder-link", inline: <<~'SHELL'
