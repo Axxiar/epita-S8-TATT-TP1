@@ -99,6 +99,9 @@ EOF
 
     # Drop any traversal ACL we added for the qemu user.
     QEMU_USER=$(sudo sed -n 's/^[[:space:]]*user[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' /etc/libvirt/qemu.conf 2>/dev/null | head -1)
+    if [[ -z "$QEMU_USER" ]]; then
+      case "$DISTRO" in *' debian '*|*' ubuntu '*) QEMU_USER="libvirt-qemu" ;; esac
+    fi
     if have setfacl && [[ -n "$QEMU_USER" && "$QEMU_USER" != "root" ]]; then
       PROJECT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
       TO_REMOVE=()
@@ -278,7 +281,12 @@ fi
 #     (Debian/Ubuntu). ACLs only the topmost blocked ancestor: descendants
 #     inherit reachability and keep their existing 'other' permissions intact
 #     (a named-user ACL would override 'other' and silently strip read access).
+#     qemu.conf's 'user =' line is commented out by default on Debian/Ubuntu —
+#     the active value is libvirt's compile-time default, so fall back to that.
 QEMU_USER=$(sudo sed -n 's/^[[:space:]]*user[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' /etc/libvirt/qemu.conf 2>/dev/null | head -1)
+if [[ -z "$QEMU_USER" ]]; then
+  case "$DISTRO" in *' debian '*|*' ubuntu '*) QEMU_USER="libvirt-qemu" ;; esac
+fi
 if [[ -n "$QEMU_USER" && "$QEMU_USER" != "root" ]] && id "$QEMU_USER" >/dev/null 2>&1; then
   PROJECT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
   ANCESTORS=()
@@ -297,6 +305,8 @@ if [[ -n "$QEMU_USER" && "$QEMU_USER" != "root" ]] && id "$QEMU_USER" >/dev/null
     bad "9p host path  $QEMU_USER blocked at $BLOCKER — install package 'acl'"
     FAIL=1
   fi
+else
+  ok "9p host path  qemu runs as root — no fix needed"
 fi
 
 # ── Result ─────────────────────────────────────────────────────────────
