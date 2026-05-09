@@ -4,10 +4,10 @@ Pentest lab: Metasploitable 2 + Kali on an isolated libvirt network.
 
 | VM                | IP                | Login                   |
 |-------------------|-------------------|-------------------------|
-| `kali`            | `192.168.242.101` | `vagrant` / `vagrant`   |
-| `metasploitable2` | `192.168.242.102` | `msfadmin` / `msfadmin` |
+| `kali`            | `192.168.42.10` | `vagrant` / `vagrant`   |
+| `metasploitable2` | `192.168.42.11` | `msfadmin` / `msfadmin` |
 
-Lab network `192.168.242.0/24` is host-only — no internet reach.
+Lab network `192.168.42.0/24` is host-only — no internet reach.
 
 ## Setup
 
@@ -30,7 +30,7 @@ anything missing. First `vagrant up` downloads ~6 GB of boxes (cached after).
 From inside Kali, confirm the target is reachable, then exploit:
 
 ```bash
-ping -c 3 192.168.242.102   # target up on the lab network
+ping -c 3 192.168.42.11   # target up on the lab network
 msfconsole                  # exploit
 ```
 

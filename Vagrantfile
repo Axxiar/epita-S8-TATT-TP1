@@ -27,7 +27,7 @@ Vagrant.configure("2") do |config|
     ms2.ssh.password = "msfadmin"
     ms2.vm.synced_folder ".", "/vagrant", disabled: true
     ms2.vm.network :private_network,
-      ip: "192.168.242.102",
+      ip: "192.168.42.11",
       libvirt__forward_mode: "none"
     ms2.vm.provider :libvirt do |v|
       v.memory            = 1024
@@ -45,7 +45,7 @@ Vagrant.configure("2") do |config|
     # into qemu on every distro, and the 9p kernel module ships in mainline.
     k.vm.synced_folder ".", "/vagrant", type: "9p", accessmode: "squash"
     k.vm.network :private_network,
-      ip: "192.168.242.101",
+      ip: "192.168.42.10",
       libvirt__forward_mode: "none"
     k.vm.provider :libvirt do |v|
       v.memory            = 4096
