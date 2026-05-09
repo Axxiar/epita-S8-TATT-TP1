@@ -24,14 +24,14 @@ anything missing. First `vagrant up` downloads ~6 GB of boxes (cached after).
 
 ## Use
 
-**GUI** — open *Virtual Machine Manager*, double-click `tools_kali`.
+**GUI** — open *Virtual Machine Manager*, double-click the kali VM.
 **CLI** — `vagrant ssh kali`.
 
-Then attack from inside Kali:
+From inside Kali, confirm the target is reachable, then exploit:
 
 ```bash
-nmap -sV 192.168.242.102
-msfconsole
+ping -c 3 192.168.242.102   # target up on the lab network
+msfconsole                  # exploit
 ```
 
 The repo dir is live-mounted at `/vagrant` inside Kali (9p, bidirectional).

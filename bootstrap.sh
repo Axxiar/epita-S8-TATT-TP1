@@ -378,7 +378,7 @@ fi
 
 step "Ready — run the lab"
 printf '  %s1.%s vagrant up                    %sprovision both VMs (~3-5 min first time)%s\n' "$B" "$N" "$D" "$N"
-printf '  %s2.%s vagrant ssh kali              %sor: virt-manager → tools_kali (graphical)%s\n' "$B" "$N" "$D" "$N"
-printf '  %s3.%s nmap -sV 192.168.242.102      %sscan the target from inside Kali%s\n' "$B" "$N" "$D" "$N"
+printf '  %s2.%s vagrant ssh kali              %sor: virt-manager → kali VM (graphical)%s\n' "$B" "$N" "$D" "$N"
+printf '  %s3.%s ping -c 3 192.168.242.102     %sconfirm target is reachable from inside Kali%s\n' "$B" "$N" "$D" "$N"
 printf '  %s4.%s msfconsole                    %sexploit%s\n' "$B" "$N" "$D" "$N"
 printf '\n  %sTear down:%s vagrant destroy -f      %sUndo bootstrap:%s ./bootstrap.sh --clean\n' "$D" "$N" "$D" "$N"
