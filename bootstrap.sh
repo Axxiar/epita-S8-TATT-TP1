@@ -101,16 +101,16 @@ EOF
     QEMU_USER=$(sudo sed -n 's/^[[:space:]]*user[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' /etc/libvirt/qemu.conf 2>/dev/null | head -1)
     if have setfacl && [[ -n "$QEMU_USER" && "$QEMU_USER" != "root" ]]; then
       PROJECT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
-      REMOVED_ACL=()
+      TO_REMOVE=()
       p="$PROJECT_DIR"
       while [[ "$p" != "/" ]]; do
-        if getfacl -p -- "$p" 2>/dev/null | grep -q "^user:${QEMU_USER}:"; then
-          sudo setfacl -x "u:${QEMU_USER}" -- "$p"
-          REMOVED_ACL+=("$p")
-        fi
+        getfacl -p -- "$p" 2>/dev/null | grep -q "^user:${QEMU_USER}:" && TO_REMOVE+=("$p")
         p=$(dirname "$p")
       done
-      (( ${#REMOVED_ACL[@]} )) && ok "9p host path  removed ${QEMU_USER} ACL on ${REMOVED_ACL[*]}"
+      if (( ${#TO_REMOVE[@]} )); then
+        sudo setfacl -x "u:${QEMU_USER}" -- "${TO_REMOVE[@]}"
+        ok "9p host path  removed ${QEMU_USER} ACL on ${TO_REMOVE[*]}"
+      fi
     fi
 
     step "Done"
@@ -275,23 +275,26 @@ else
 fi
 
 # 10. 9p host traversal — only when libvirtd drops privileges to a non-root user
-#     (Debian/Ubuntu). Adds traversal-only ACL on blocked ancestors of project dir.
+#     (Debian/Ubuntu). ACLs only the topmost blocked ancestor: descendants
+#     inherit reachability and keep their existing 'other' permissions intact
+#     (a named-user ACL would override 'other' and silently strip read access).
 QEMU_USER=$(sudo sed -n 's/^[[:space:]]*user[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' /etc/libvirt/qemu.conf 2>/dev/null | head -1)
 if [[ -n "$QEMU_USER" && "$QEMU_USER" != "root" ]] && id "$QEMU_USER" >/dev/null 2>&1; then
   PROJECT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
-  BLOCKED=()
+  ANCESTORS=()
   p="$PROJECT_DIR"
-  while [[ "$p" != "/" ]]; do
-    sudo -u "$QEMU_USER" test -x "$p" 2>/dev/null || BLOCKED+=("$p")
-    p=$(dirname "$p")
+  while [[ "$p" != "/" ]]; do ANCESTORS=("$p" "${ANCESTORS[@]}"); p=$(dirname "$p"); done
+  BLOCKER=""
+  for d in "${ANCESTORS[@]}"; do
+    sudo -u "$QEMU_USER" test -x "$d" 2>/dev/null || { BLOCKER="$d"; break; }
   done
-  if (( ${#BLOCKED[@]} == 0 )); then
+  if [[ -z "$BLOCKER" ]]; then
     ok "9p host path  $QEMU_USER can traverse $PROJECT_DIR"
   elif have setfacl; then
-    for d in "${BLOCKED[@]}"; do sudo setfacl -m "u:${QEMU_USER}:--x" -- "$d"; done
-    ok "9p host path  setfacl u:${QEMU_USER}:--x on ${BLOCKED[*]}"
+    sudo setfacl -m "u:${QEMU_USER}:--x" -- "$BLOCKER"
+    ok "9p host path  setfacl u:${QEMU_USER}:--x on $BLOCKER"
   else
-    bad "9p host path  $QEMU_USER blocked at ${BLOCKED[*]} — install package 'acl'"
+    bad "9p host path  $QEMU_USER blocked at $BLOCKER — install package 'acl'"
     FAIL=1
   fi
 fi
