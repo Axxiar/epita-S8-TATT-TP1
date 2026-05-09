@@ -29,6 +29,8 @@ POOL_PATH="/var/lib/libvirt/images/tatt-pentest-lab"
 # Robustness preflight ─ before anything else.
 [[ $EUID -eq 0 ]] && fail "do not run as root — the script uses sudo internally where needed"
 have sudo || fail "sudo not found — install it (or run firewall edits manually as root)"
+# Warm sudo timestamp once so subsequent sudo calls don't re-prompt.
+[[ "${1:-}" != -h && "${1:-}" != --help ]] && sudo -v
 
 ID=""; ID_LIKE=""; VERSION_ID=""; PRETTY_NAME=""
 [[ -r /etc/os-release ]] && . /etc/os-release || true
@@ -93,6 +95,22 @@ EOF
     while sudo iptables -D FORWARD -o virbr+ -j ACCEPT 2>/dev/null; do REMOVED_IPT=1; done
     if (( REMOVED_IPT )); then
       ok "iptables     virbr+ runtime rules removed"
+    fi
+
+    # Drop any traversal ACL we added for the qemu user.
+    QEMU_USER=$(sudo sed -n 's/^[[:space:]]*user[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' /etc/libvirt/qemu.conf 2>/dev/null | head -1)
+    if have setfacl && [[ -n "$QEMU_USER" && "$QEMU_USER" != "root" ]]; then
+      PROJECT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
+      REMOVED_ACL=()
+      p="$PROJECT_DIR"
+      while [[ "$p" != "/" ]]; do
+        if getfacl -p -- "$p" 2>/dev/null | grep -q "^user:${QEMU_USER}:"; then
+          sudo setfacl -x "u:${QEMU_USER}" -- "$p"
+          REMOVED_ACL+=("$p")
+        fi
+        p=$(dirname "$p")
+      done
+      (( ${#REMOVED_ACL[@]} )) && ok "9p host path  removed ${QEMU_USER} ACL on ${REMOVED_ACL[*]}"
     fi
 
     step "Done"
@@ -254,6 +272,28 @@ elif have nft && sudo nft list ruleset 2>/dev/null | grep -qE 'hook (input|forwa
 
 else
   ok "firewall      no managed firewall blocking libvirt"
+fi
+
+# 10. 9p host traversal — only when libvirtd drops privileges to a non-root user
+#     (Debian/Ubuntu). Adds traversal-only ACL on blocked ancestors of project dir.
+QEMU_USER=$(sudo sed -n 's/^[[:space:]]*user[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' /etc/libvirt/qemu.conf 2>/dev/null | head -1)
+if [[ -n "$QEMU_USER" && "$QEMU_USER" != "root" ]] && id "$QEMU_USER" >/dev/null 2>&1; then
+  PROJECT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
+  BLOCKED=()
+  p="$PROJECT_DIR"
+  while [[ "$p" != "/" ]]; do
+    sudo -u "$QEMU_USER" test -x "$p" 2>/dev/null || BLOCKED+=("$p")
+    p=$(dirname "$p")
+  done
+  if (( ${#BLOCKED[@]} == 0 )); then
+    ok "9p host path  $QEMU_USER can traverse $PROJECT_DIR"
+  elif have setfacl; then
+    for d in "${BLOCKED[@]}"; do sudo setfacl -m "u:${QEMU_USER}:--x" -- "$d"; done
+    ok "9p host path  setfacl u:${QEMU_USER}:--x on ${BLOCKED[*]}"
+  else
+    bad "9p host path  $QEMU_USER blocked at ${BLOCKED[*]} — install package 'acl'"
+    FAIL=1
+  fi
 fi
 
 # ── Result ─────────────────────────────────────────────────────────────

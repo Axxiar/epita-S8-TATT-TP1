@@ -37,6 +37,17 @@ msfconsole
 The repo dir is live-mounted at `/vagrant` inside Kali (9p, bidirectional).
 Drop loot there and it appears in the host repo dir instantly.
 
+## Stop / resume
+
+```bash
+vagrant halt [name]   # graceful shutdown — disks and state kept
+vagrant up   [name]   # boot back up
+vagrant halt -f       # hard power-off if a VM hangs
+```
+
+`vagrant suspend` / `vagrant resume` for faster resume (saves RAM to disk).
+`vagrant status` shows current state.
+
 ## Tear down
 
 ```bash
