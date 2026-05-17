@@ -172,9 +172,9 @@ fi
 
 # 5. libvirt group
 if id -nG | grep -qwE "(libvirt|libvirtd)"; then
-    ok "groups        $USER ∈ libvirt(d)"
+  ok "groups        $USER ∈ libvirt(d)"
 else
-  bad "groups        $USER not in libvirt nor libvirtd group"
+  bad "groups        $USER neither in libvirt nor libvirtd group"
   FAIL=1
 fi
 
