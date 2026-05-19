@@ -171,10 +171,10 @@ else
 fi
 
 # 5. libvirt group
-if id -nG | grep -qw libvirt; then
-  ok "groups        $USER ∈ libvirt"
+if id -nG | grep -qwE "(libvirt|libvirtd)"; then
+  ok "groups        $USER ∈ libvirt(d)"
 else
-  bad "groups        $USER not in libvirt group"
+  bad "groups        $USER neither in libvirt nor libvirtd group"
   FAIL=1
 fi
 
@@ -349,7 +349,7 @@ if (( FAIL )); then
       printf '  %s  environment.systemPackages = with pkgs; [ vagrant ];%s\n' "$B" "$N"
       printf '  %s  virtualisation.libvirtd.enable = true;%s\n' "$B" "$N"
       printf '  %s  programs.virt-manager.enable = true;%s\n' "$B" "$N"
-      printf '  %s  users.users.<you>.extraGroups = [ "libvirt" "kvm" ];%s\n' "$B" "$N"
+      printf '  %s  users.users.<you>.extraGroups = [ "libvirtd" "kvm" ];%s\n' "$B" "$N"
       ;;
     *)
       printf '  %s# Unknown distro — install via your package manager:%s\n' "$D" "$N"
@@ -358,7 +358,7 @@ if (( FAIL )); then
   esac
 
   printf '  %ssudo systemctl enable --now libvirtd.socket%s\n'                "$B" "$N"
-  printf '  %ssudo usermod -aG libvirt,kvm "$USER" && newgrp libvirt%s\n'     "$B" "$N"
+  printf '  %ssudo usermod -aG libvirt,kvm "$USER" && newgrp libvirt #(for nixos replace libvirt by libvirtd)%s\n'     "$B" "$N"
   if (( ! PLUGIN_VIA_PKG )); then
     printf '  %svagrant plugin install vagrant-libvirt%s\n'                    "$B" "$N"
   fi
